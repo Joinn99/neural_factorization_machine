@@ -14,7 +14,7 @@ import os
 import sys
 import math
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import accuracy_score
@@ -22,7 +22,7 @@ from sklearn.metrics import log_loss
 from time import time
 import argparse
 import LoadData as DATA
-from tensorflow.contrib.layers.python.layers import batch_norm as batch_norm
+from tensorflow.compat.v1.layers import batch_normalization as batch_norm
 
 #################### Arguments ####################
 def parse_args():
@@ -75,7 +75,7 @@ class NeuralFM(BaseEstimator, TransformerMixin):
         self.epoch = epoch
         self.random_seed = random_seed
         self.keep_prob = np.array(keep_prob)
-        self.no_dropout = np.array([1 for i in xrange(len(keep_prob))])
+        self.no_dropout = np.array([1 for i in range(len(keep_prob))])
         self.optimizer_type = optimizer_type
         self.learning_rate = learning_rate
         self.batch_norm = batch_norm
@@ -118,7 +118,7 @@ class NeuralFM(BaseEstimator, TransformerMixin):
             self.squared_sum_features_emb = tf.reduce_sum(self.squared_features_emb, 1)  # None * K
 
             # ________ FM __________
-            self.FM = 0.5 * tf.sub(self.summed_features_emb_square, self.squared_sum_features_emb)  # None * K
+            self.FM = 0.5 * tf.subtract(self.summed_features_emb_square, self.squared_sum_features_emb)  # None * K
             if self.batch_norm:
                 self.FM = self.batch_norm_layer(self.FM, train_phase=self.train_phase, scope_bn='bn_fm')
             self.FM = tf.nn.dropout(self.FM, self.dropout_keep[-1]) # dropout at the bilinear interactin layer
@@ -141,9 +141,9 @@ class NeuralFM(BaseEstimator, TransformerMixin):
             # Compute the loss.
             if self.loss_type == 'square_loss':
                 if self.lamda_bilinear > 0:
-                    self.loss = tf.nn.l2_loss(tf.sub(self.train_labels, self.out)) + tf.contrib.layers.l2_regularizer(self.lamda_bilinear)(self.weights['feature_embeddings'])  # regulizer
+                    self.loss = tf.nn.l2_loss(tf.subtract(self.train_labels, self.out)) + tf.contrib.layers.l2_regularizer(self.lamda_bilinear)(self.weights['feature_embeddings'])  # regulizer
                 else:
-                    self.loss = tf.nn.l2_loss(tf.sub(self.train_labels, self.out))
+                    self.loss = tf.nn.l2_loss(tf.subtract(self.train_labels, self.out))
             elif self.loss_type == 'log_loss':
                 self.out = tf.sigmoid(self.out)
                 if self.lambda_bilinear > 0:
@@ -176,7 +176,7 @@ class NeuralFM(BaseEstimator, TransformerMixin):
                     variable_parameters *= dim.value
                 total_parameters += variable_parameters
             if self.verbose > 0:
-                print "#params: %d" %total_parameters 
+                print("#params: %d" %total_parameters )
 
     def _initialize_weights(self):
         all_weights = dict()
@@ -218,10 +218,10 @@ class NeuralFM(BaseEstimator, TransformerMixin):
         return all_weights
 
     def batch_norm_layer(self, x, train_phase, scope_bn):
-        bn_train = batch_norm(x, decay=0.9, center=True, scale=True, updates_collections=None,
-            is_training=True, reuse=None, trainable=True, scope=scope_bn)
-        bn_inference = batch_norm(x, decay=0.9, center=True, scale=True, updates_collections=None,
-            is_training=False, reuse=True, trainable=True, scope=scope_bn)
+        bn_train = batch_norm(x, momentum=0.9, center=True, scale=True,
+            training=True, reuse=None, trainable=True, name=scope_bn)
+        bn_inference = batch_norm(x, momentum=0.9, center=True, scale=True,
+            training=False, reuse=True, trainable=True, name=scope_bn)
         z = tf.cond(train_phase, lambda: bn_train, lambda: bn_inference)
         return z
 
@@ -268,11 +268,11 @@ class NeuralFM(BaseEstimator, TransformerMixin):
             init_test = self.evaluate(Test_data)
             print("Init: \t train=%.4f, validation=%.4f, test=%.4f [%.1f s]" %(init_train, init_valid, init_test, time()-t2))
         
-        for epoch in xrange(self.epoch):
+        for epoch in range(self.epoch):
             t1 = time()
             self.shuffle_in_unison_scary(Train_data['X'], Train_data['Y'])
             total_batch = int(len(Train_data['Y']) / self.batch_size)
-            for i in xrange(total_batch):
+            for i in range(total_batch):
                 # generate a batch
                 batch_xs = self.get_random_block_from_data(Train_data, self.batch_size)
                 # Fit training
@@ -331,6 +331,7 @@ class NeuralFM(BaseEstimator, TransformerMixin):
 
 if __name__ == '__main__':
     # Data loading
+    tf.disable_v2_behavior()
     args = parse_args()
     data = DATA.LoadData(args.path, args.dataset, args.loss_type)
     if args.verbose > 0:
@@ -356,5 +357,5 @@ if __name__ == '__main__':
     elif args.loss_type == 'log_loss':
         best_valid_score = max(model.valid_rmse)
     best_epoch = model.valid_rmse.index(best_valid_score)
-    print ("Best Iter(validation)= %d\t train = %.4f, valid = %.4f, test = %.4f [%.1f s]" 
+    print("Best Iter(validation)= %d\t train = %.4f, valid = %.4f, test = %.4f [%.1f s]" 
            %(best_epoch+1, model.train_rmse[best_epoch], model.valid_rmse[best_epoch], model.test_rmse[best_epoch], time()-t1))
