@@ -336,7 +336,8 @@ if __name__ == '__main__':
     # Data loading
     tf.disable_v2_behavior()
     args = parse_args()
-    data = DATA.LoadData(args.path, args.dataset, args.loss_type)
+    # data = DATA.LoadData(args.path, args.dataset, args.loss_type)
+    data = DATA.LoadMat(args.path, args.dataset, args.loss_type)
     if args.verbose > 0:
         print("Neural FM: dataset=%s, hidden_factor=%d, dropout_keep=%s, layers=%s, loss_type=%s, pretrain=%d, #epoch=%d, batch=%d, lr=%.4f, lambda=%.4f, optimizer=%s, batch_norm=%d, activation=%s, early_stop=%d" 
               %(args.dataset, args.hidden_factor, args.keep_prob, args.layers, args.loss_type, args.pretrain, args.epoch, args.batch_size, args.lr, args.lamda, args.optimizer, args.batch_norm, args.activation, args.early_stop))
