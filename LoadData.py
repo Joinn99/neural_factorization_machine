@@ -101,8 +101,8 @@ class LoadData(object):
         Data_Dic = {}
         X_lens = [ len(line) for line in X_]
         indexs = np.argsort(X_lens)
-        Data_Dic['Y'] = [ Y_[i] for i in indexs]
-        Data_Dic['X'] = [ X_[i] for i in indexs]
+        Data_Dic['Y'] = np.array([ Y_[i] for i in indexs])
+        Data_Dic['X'] = np.array([ X_[i] for i in indexs])
         return Data_Dic
     
     def truncate_features(self):

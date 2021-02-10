@@ -143,6 +143,9 @@ class FM(BaseEstimator, TransformerMixin):
             elif self.optimizer_type == 'MomentumOptimizer':
                 self.optimizer = tf.train.MomentumOptimizer(learning_rate=self.learning_rate, momentum=0.95).minimize(self.loss)
 
+            update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+            self.optimizer = tf.group([self.optimizer, update_ops])
+
             # init
             self.saver = tf.train.Saver()
             init = tf.global_variables_initializer()
@@ -298,6 +301,13 @@ class FM(BaseEstimator, TransformerMixin):
                     predictions_binary.append(0.0)
             Accuracy = accuracy_score(y_true, predictions_binary)
             return Accuracy '''
+
+    # def predict(self, data):
+    #     feed_dict = {self.train_features: data['X'], self.train_labels: [[y] for y in data['Y']], self.dropout_keep: 1.0, self.train_phase: False}
+    #     predictions = self.sess.run((self.out), feed_dict=feed_dict)
+    #     y_pred = np.reshape(predictions, (num_example,))
+    #     y_true = np.reshape(data['Y'], (num_example,))
+        
 
 if __name__ == '__main__':
     # Data loading

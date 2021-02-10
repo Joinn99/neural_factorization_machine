@@ -53,7 +53,7 @@ def parse_args():
                         help='Specify an optimizer type (AdamOptimizer, AdagradOptimizer, GradientDescentOptimizer, MomentumOptimizer).')
     parser.add_argument('--verbose', type=int, default=1,
                         help='Show the results per X epochs (0, 1 ... any positive integer)')
-    parser.add_argument('--batch_norm', type=int, default=1,
+    parser.add_argument('--batch_norm', type=int, default=0,
                     help='Whether to perform batch normaization (0 or 1)')
     parser.add_argument('--activation', nargs='?', default='relu',
                     help='Which activation function to use for deep layers: relu, sigmoid, tanh, identity')
@@ -160,6 +160,9 @@ class NeuralFM(BaseEstimator, TransformerMixin):
                 self.optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.learning_rate).minimize(self.loss)
             elif self.optimizer_type == 'MomentumOptimizer':
                 self.optimizer = tf.train.MomentumOptimizer(learning_rate=self.learning_rate, momentum=0.95).minimize(self.loss)
+
+            update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+            self.optimizer = tf.group([self.optimizer, update_ops])
 
             # init
             self.saver = tf.train.Saver()
