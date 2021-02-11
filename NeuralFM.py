@@ -24,6 +24,9 @@ import argparse
 import LoadData as DATA
 from tensorflow.compat.v1.layers import batch_normalization as batch_norm
 
+import matlab.engine
+from scipy.io import savemat
+
 #################### Arguments ####################
 def parse_args():
     parser = argparse.ArgumentParser(description="Run Neural FM.")
@@ -308,6 +311,14 @@ class NeuralFM(BaseEstimator, TransformerMixin):
                     return True
         return False
 
+
+    def predict(self, data):
+        feed_dict = {self.train_features: data['X'], self.train_labels: [[y] for y in data['Y']], self.dropout_keep: self.no_dropout, self.train_phase: False}
+        predictions = self.sess.run((self.out), feed_dict=feed_dict)
+        # y_pred = np.reshape(predictions, (num_example,))
+        # y_true = np.reshape(data['Y'], (num_example,))
+        return predictions.astype(np.double), data["Y"]
+
     def evaluate(self, data):  # evaluate the results for an input set
         num_example = len(data['Y'])
         feed_dict = {self.train_features: data['X'], self.train_labels: [[y] for y in data['Y']], self.dropout_keep: self.no_dropout, self.train_phase: False}
@@ -354,6 +365,15 @@ if __name__ == '__main__':
     model = NeuralFM(data.features_M, args.hidden_factor, eval(args.layers), args.loss_type, args.pretrain, args.epoch, args.batch_size, args.lr, args.lamda, eval(args.keep_prob), args.optimizer, args.batch_norm, activation_function, args.verbose, args.early_stop)
     model.train(data.Train_data, data.Validation_data, data.Test_data)
     
+    # Predict & Evaluate
+    Result, Target = model.predict(data.Test_data)
+    Result = np.reshape(Result, (-1 ,data.sizeL)).T
+    Target = np.reshape(Target, (-1 ,data.sizeL)).T
+
+    eng = matlab.engine.start_matlab()
+    Performance = eng.RankEval(matlab.double(Result.tolist()), matlab.double(Target.tolist()), 5)
+    print(Performance)
+
     # Find the best validation result across iterations
     best_valid_score = 0
     if args.loss_type == 'square_loss':

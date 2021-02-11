@@ -171,3 +171,5 @@ class LoadMat(object):
         self.Train_data["Y"] = self.Train_data["Y"].flatten()
         self.Validation_data["Y"] = self.Validation_data["Y"].flatten()
         self.Test_data["Y"] = self.Test_data["Y"].flatten()
+
+        self.sizeL = sizel
